@@ -16,13 +16,15 @@ const semaphore = new Semaphore(2);
       const path = "tor-" + magnet.split(":")[3].split("&")[0];
       const torrent = await client.get(magnet);
       if (torrent) {
-        return await handleTorrent(torrent, m,path);
+        return await handleTorrent(torrent, m, path);
       }
-      client.add(magnet, { path }, (torrent) => handleTorrent(torrent, m,path));
+      client.add(magnet, { path }, (torrent) =>
+        handleTorrent(torrent, m, path)
+      );
     },
   });
 })();
-async function handleTorrent(torrent, m,path) {
+async function handleTorrent(torrent, m, path) {
   let start = new Date().getTime();
   let a = await m.client.sendMessage(m.jid, {
     message: "Downloading torrent...\n" + torrent.name,
@@ -37,39 +39,45 @@ async function handleTorrent(torrent, m,path) {
     });
     let start = new Date().getTime();
     let prevText = "";
-    await m.client.send(
-      m.jid,
-      {
-        document: {
-          url: `${path}/${file.path}`,
-        },
-        fileName: file.name,
-      },
-      {
-        progressCallback: async (p) => {
-          const now = new Date().getTime();
-          if (now - start < 10000) return;
-          start = now;
-          const text = `Uploading ${file.name}\nprogress: ${(p * 100).toFixed(
-            2
-          )}%`;
-          if (prevText === text) return;
-          prevText = text;
-          try {
-            await msg.edit({ text });
-          } catch (error) {
-            console.log(error);
-          }
-        },
-      }
-    );
-    semaphore.release();
-    console.log(semaphore.count);
     try {
-      fs.unlinkSync(`${path}/${file.path}`);
-      await msg.delete({ revoke: true });
+      await m.client.send(
+        m.jid,
+        {
+          document: {
+            url: `${path}/${file.path}`,
+          },
+          fileName: file.name,
+        },
+        {
+          progressCallback: async (p) => {
+            const now = new Date().getTime();
+            if (now - start < 10000) return;
+            start = now;
+            const text = `Uploading ${file.name}\nprogress: ${(p * 100).toFixed(
+              2
+            )}%`;
+            if (prevText === text) return;
+            prevText = text;
+            try {
+              await msg.edit({ text });
+            } catch (error) {
+              console.log(error);
+            }
+          },
+        }
+      );
+      try {
+        await msg.delete({ revoke: true });
+      } catch (error) {
+        console.log(error);
+      }
     } catch (error) {
-      console.log(error);
+      await msg.edit({
+        text: "An error occured while uploading..\n" + error.message,
+      });
+    } finally {
+      semaphore.release();
+      fs.unlinkSync(`${path}/${file.path}`);
     }
   };
   if (torrent.ready) {
@@ -148,4 +156,4 @@ async function handleTorrent(torrent, m,path) {
   });
 }
 
-module.exports = {handleTorrent}
+module.exports = { handleTorrent };
