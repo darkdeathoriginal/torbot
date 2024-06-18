@@ -16,13 +16,13 @@ const semaphore = new Semaphore(2);
       const path = "tor-" + magnet.split(":")[3].split("&")[0];
       const torrent = await client.get(magnet);
       if (torrent) {
-        return await handleTorrent(torrent, m);
+        return await handleTorrent(torrent, m,path);
       }
-      client.add(magnet, { path }, (torrent) => handleTorrent(torrent, m));
+      client.add(magnet, { path }, (torrent) => handleTorrent(torrent, m,path));
     },
   });
 })();
-async function handleTorrent(torrent, m) {
+async function handleTorrent(torrent, m,path) {
   let start = new Date().getTime();
   let a = await m.client.sendMessage(m.jid, {
     message: "Downloading torrent...\n" + torrent.name,
