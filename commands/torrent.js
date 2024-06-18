@@ -147,3 +147,5 @@ async function handleTorrent(torrent, m) {
     console.log("torrent metadata");
   });
 }
+
+module.exports = {handleTorrent}
