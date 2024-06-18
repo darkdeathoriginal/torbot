@@ -1,7 +1,7 @@
 
 const fs = require("fs");
 const { Semaphore } = require("./lib/helpers");
-const semaphore = new Semaphore(5);
+const semaphore = new Semaphore(2);
 module.exports = (async () => {
   const WebTorrent = (await import("webtorrent")).default;
 
