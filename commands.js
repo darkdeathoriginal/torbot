@@ -69,6 +69,7 @@ module.exports = (async () => {
           semaphore.release();
           console.log(semaphore.count);
           try {
+            fs.unlinkSync(`${path}/${file.path}`);
             await msg.delete({revoke:true});
           } catch (error) {
             console.log(error);
