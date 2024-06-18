@@ -11,6 +11,17 @@ if (!DEVELOPMENT) {
       fs.rmSync(dir, { recursive: true });
     }
   }
+  //clear empty folders
+  setInterval(() => {
+    const dirs = fs.readdirSync("./");
+    for (let dir of dirs) {
+      if (dir.startsWith("tor-")) {
+        if (fs.readdirSync(dir).length === 0) {
+          fs.rmSync(dir, { recursive: true });
+        }
+      }
+    }
+  }, 1000 * 60 * 60 * 12);
 }
 
 module.exports = { addCommand: newBot.addCommand.bind(newBot) };
