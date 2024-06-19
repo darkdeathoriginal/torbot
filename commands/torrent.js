@@ -24,7 +24,7 @@ const semaphore = new Semaphore(2);
     },
   });
 })();
-async function handleTorrent(torrent, m, path) {
+async function handleTorrent(torrent, m, path,clearMsg = false) {
   let start = new Date().getTime();
   let a = await m.client.sendMessage(m.jid, {
     message: "Downloading torrent...\n" + torrent.name,
@@ -141,6 +141,9 @@ async function handleTorrent(torrent, m, path) {
     console.log("torrent finished downloading");
     torrent.destroy();
     await a.edit({ text: "torrent finished downloading" });
+    if(clearMsg){
+      await a.delete({revoke:true});
+    }
   };
   if (torrent.done) {
     return await handleDone();
