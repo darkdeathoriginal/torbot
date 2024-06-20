@@ -18,7 +18,7 @@ const semaphore = new Semaphore(2);
       if (torrent) {
         return await handleTorrent(torrent, m, path);
       }
-      client.add(magnet, { path }, (torrent) =>
+      client.add(magnet, { path,destroyStoreOnDestroy: true }, (torrent) =>
         handleTorrent(torrent, m, path)
       );
     },
@@ -95,15 +95,18 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
     }
   };
   if (torrent.ready) {
+    const promises = [];
     for (let file of torrent.files) {
       if(file.done){
-        handleSendFile(file,true)
+        promises.push(handleSendFile(file,true))
       }
       else{
         // file.once("done",()=>handleSendFile(file,true))
-        handleSendFile(file)
+        promises.push(handleSendFile(file))
       }
     }
+    await Promise.all(promises);
+    torrent.destroy();
   } else {
     torrent.once("metadata", () => {
       console.log("metadata", torrent.files);
@@ -149,7 +152,6 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
   });
   const handleDone = async () => {
     console.log("torrent finished downloading");
-    torrent.destroy();
     await a.edit({ text: "torrent finished downloading" });
     if (clearMsg) {
       await a.delete({ revoke: true });
