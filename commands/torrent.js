@@ -105,8 +105,7 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
         promises.push(handleSendFile(file))
       }
     }
-    await Promise.all(promises);
-    torrent.destroy();
+    Promise.all(promises).then(torrent.destroy)
   } else {
     torrent.once("metadata", () => {
       console.log("metadata", torrent.files);
