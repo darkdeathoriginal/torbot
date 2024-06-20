@@ -24,13 +24,13 @@ const semaphore = new Semaphore(2);
     },
   });
 })();
-async function handleTorrent(torrent, m, path,clearMsg = false) {
+async function handleTorrent(torrent, m, path, clearMsg = false) {
   let start = new Date().getTime();
   let a = await m.client.sendMessage(m.jid, {
     message: "Downloading torrent...\n" + torrent.name,
   });
   let prevText = "";
-  const handleSendFile = async (file) => {
+  const handleSendFile = async (file,usepath=false) => {
     console.log("file done", file.name);
     console.log("file path", file.path);
     await semaphore.acquire();
@@ -39,13 +39,12 @@ async function handleTorrent(torrent, m, path,clearMsg = false) {
     });
     let start = new Date().getTime();
     let prevText = "";
+    const document = usepath?{url:`${path}/${file.path}`}:{iterator:file,size:file.size}
     try {
       await m.client.send(
         m.jid,
         {
-          document: {
-            url: `${path}/${file.path}`,
-          },
+          document,
           fileName: file.name,
         },
         {
@@ -71,34 +70,39 @@ async function handleTorrent(torrent, m, path,clearMsg = false) {
       } catch (error) {
         console.log(error);
       }
+      if(file.done){
+        fs.unlinkSync(`${path}/${file.path}`);
+      }
+      else{
+        file.once("done",()=>fs.unlinkSync(`${path}/${file.path}`))
+      }
     } catch (error) {
       await msg.edit({
         text: "An error occured while uploading..\n" + error.message,
       });
+      console.log(error);
+      if(!usepath){
+        await msg.delete({ revoke: true });
+        if(file.done){
+          handleSendFile(file,true)
+        }
+        else{
+          file.once("done",()=>handleSendFile(file,true))
+        }
+      }
     } finally {
       semaphore.release();
-      fs.unlinkSync(`${path}/${file.path}`);
     }
   };
   if (torrent.ready) {
     for (let file of torrent.files) {
-      if (file.done) {
-        handleSendFile(file);
-      }
-      file.once("done", async () => {
-        handleSendFile(file);
-      });
+      handleSendFile(file)
     }
   } else {
     torrent.once("metadata", () => {
       console.log("metadata", torrent.files);
       for (let file of torrent.files) {
-        if (file.done) {
-          handleSendFile(file);
-        }
-        file.once("done", async () => {
-          await handleSendFile(file);
-        });
+        handleSendFile(file)
       }
     });
   }
@@ -141,8 +145,8 @@ async function handleTorrent(torrent, m, path,clearMsg = false) {
     console.log("torrent finished downloading");
     torrent.destroy();
     await a.edit({ text: "torrent finished downloading" });
-    if(clearMsg){
-      await a.delete({revoke:true});
+    if (clearMsg) {
+      await a.delete({ revoke: true });
     }
   };
   if (torrent.done) {
