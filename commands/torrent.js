@@ -100,7 +100,7 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
         handleSendFile(file,true)
       }
       else{
-        handleSendFile(file)
+        file.once("done",()=>handleSendFile(file,true))
       }
     }
   } else {
