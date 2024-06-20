@@ -106,8 +106,13 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
         promises.push(handleSendFile(file,true))
       }
       else{
-        // file.once("done",()=>handleSendFile(file,true))
-        promises.push(handleSendFile(file))
+        promises.push(new Promise((resolve,reject)=>{
+          file.once("done",async()=>{
+            await handleSendFile(file,true)
+            resolve()
+          })
+        }))
+        // promises.push(handleSendFile(file))
       }
     }
     Promise.all(promises).then(()=>torrent.destroy())
