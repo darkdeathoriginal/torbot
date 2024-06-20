@@ -84,10 +84,15 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
       if(!usepath){
         await msg.delete({ revoke: true });
         if(file.done){
-          handleSendFile(file,true)
+          await handleSendFile(file,true)
         }
         else{
-          file.once("done",()=>handleSendFile(file,true))
+          await new Promise((resolve,reject)=>{
+            file.once("done",async()=>{
+              await handleSendFile(file,true)
+              resolve()
+            })
+          })
         }
       }
     } finally {
