@@ -96,7 +96,12 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
   };
   if (torrent.ready) {
     for (let file of torrent.files) {
-      handleSendFile(file)
+      if(file.done){
+        handleSendFile(file,true)
+      }
+      else{
+        handleSendFile(file)
+      }
     }
   } else {
     torrent.once("metadata", () => {
