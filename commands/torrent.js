@@ -5,6 +5,7 @@ const store = require('memory-chunk-store')
 const semaphore = new Semaphore(2);
 
 
+
 (async () => {
   const WebTorrent = (await import("webtorrent")).default;
 
@@ -20,7 +21,7 @@ const semaphore = new Semaphore(2);
       if (torrent) {
         return await handleTorrent(torrent, m, path);
       }
-      client.add(magnet, { path,destroyStoreOnDestroy: true,store,deselect:true }, (torrent) =>
+      client.add(magnet, { path,destroyStoreOnDestroy: true, }, (torrent) =>
         handleTorrent(torrent, m, path)
       );
     },
