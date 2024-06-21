@@ -1,7 +1,9 @@
 const fs = require("fs");
 const { Semaphore } = require("../lib/helpers");
 const { addCommand } = require("..");
+const store = require('memory-chunk-store')
 const semaphore = new Semaphore(2);
+
 
 (async () => {
   const WebTorrent = (await import("webtorrent")).default;
@@ -18,7 +20,7 @@ const semaphore = new Semaphore(2);
       if (torrent) {
         return await handleTorrent(torrent, m, path);
       }
-      client.add(magnet, { path,destroyStoreOnDestroy: true }, (torrent) =>
+      client.add(magnet, { path,destroyStoreOnDestroy: true,store,deselect:true }, (torrent) =>
         handleTorrent(torrent, m, path)
       );
     },
@@ -106,13 +108,13 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
         promises.push(handleSendFile(file,true))
       }
       else{
-        promises.push(new Promise((resolve,reject)=>{
-          file.once("done",async()=>{
-            await handleSendFile(file,true)
-            resolve()
-          })
-        }))
-        // promises.push(handleSendFile(file))
+        // promises.push(new Promise((resolve,reject)=>{
+        //   file.once("done",async()=>{
+        //     await handleSendFile(file,true)
+        //     resolve()
+        //   })
+        // }))
+        promises.push(handleSendFile(file))
       }
     }
     Promise.all(promises).then(()=>torrent.destroy())
@@ -166,10 +168,10 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
       await a.delete({ revoke: true });
     }
   };
-  if (torrent.done) {
-    return await handleDone();
-  }
-  torrent.once("done", handleDone);
+  // if (torrent.done) {
+  //   return await handleDone();
+  // }
+  // torrent.once("done", handleDone);
   torrent.once("error", async (err) => {
     console.log("torrent error", err);
     torrent.destroy();
