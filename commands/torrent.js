@@ -21,7 +21,7 @@ const semaphore = new Semaphore(2);
       if (torrent) {
         return await handleTorrent(torrent, m, path);
       }
-      client.add(magnet, { path,destroyStoreOnDestroy: true, }, (torrent) =>
+      client.add(magnet, { path, }, (torrent) =>
         handleTorrent(torrent, m, path)
       );
     },
