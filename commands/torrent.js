@@ -109,13 +109,13 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
         promises.push(handleSendFile(file,true))
       }
       else{
-        // promises.push(new Promise((resolve,reject)=>{
-        //   file.once("done",async()=>{
-        //     await handleSendFile(file,true)
-        //     resolve()
-        //   })
-        // }))
-        promises.push(handleSendFile(file))
+        promises.push(new Promise((resolve,reject)=>{
+          file.once("done",async()=>{
+            await handleSendFile(file,true)
+            resolve()
+          })
+        }))
+        // promises.push(handleSendFile(file))
       }
     }
     Promise.all(promises).then(()=>torrent.destroy())
@@ -164,15 +164,16 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
   });
   const handleDone = async () => {
     console.log("torrent finished downloading");
+    torrent.destroy();
     await a.edit({ text: "torrent finished downloading" });
     if (clearMsg) {
       await a.delete({ revoke: true });
     }
   };
-  // if (torrent.done) {
-  //   return await handleDone();
-  // }
-  // torrent.once("done", handleDone);
+  if (torrent.done) {
+    return await handleDone();
+  }
+  torrent.once("done", handleDone);
   torrent.once("error", async (err) => {
     console.log("torrent error", err);
     torrent.destroy();
