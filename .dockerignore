@@ -3,3 +3,5 @@ node_modules
 torrent
 tor-*
 bot.db
+main.exe
+session.dat

@@ -4,6 +4,8 @@ const { addCommand } = require("..");
 const store = require('memory-chunk-store')
 const semaphore = new Semaphore(2);
 
+const { execFile } = require('child_process');
+const Path = require('path');
 
 
 (async () => {
@@ -40,67 +42,18 @@ async function handleTorrent(torrent, m, path, clearMsg = false) {
     const msg = await m.client.sendMessage(m.jid, {
       message: "file done\n" + file.name,
     });
-    let start = new Date().getTime();
-    let prevText = "";
-    const document = usepath?{url:`${path}/${file.path}`}:{iterator:file,size:file.size}
-    try {
-      await m.client.send(
-        m.jid,
-        {
-          document,
-          fileName: file.name,
-        },
-        {
-          progressCallback: async (p) => {
-            const now = new Date().getTime();
-            if (now - start < 10000) return;
-            start = now;
-            const text = `Uploading ${file.name}\nprogress: ${(p * 100).toFixed(
-              2
-            )}%`;
-            if (prevText === text) return;
-            prevText = text;
-            try {
-              await msg.edit({ text });
-            } catch (error) {
-              console.log(error);
-            }
-          },
-        }
-      );
-      try {
-        await msg.delete({ revoke: true });
-      } catch (error) {
-        console.log(error);
-      }
-      if(file.done){
-        fs.unlinkSync(`${path}/${file.path}`);
-      }
-      else{
-        file.once("done",()=>fs.unlinkSync(`${path}/${file.path}`))
-      }
-    } catch (error) {
-      await msg.edit({
-        text: "An error occured while uploading..\n" + error.message,
-      });
-      console.log(error);
-      if(!usepath){
-        await msg.delete({ revoke: true });
-        if(file.done){
-          await handleSendFile(file,true)
-        }
-        else{
-          await new Promise((resolve,reject)=>{
-            file.once("done",async()=>{
-              await handleSendFile(file,true)
-              resolve()
-            })
-          })
-        }
-      }
-    } finally {
+    const document = `${path}/${file.path}`
+      const goBinary = Path.resolve(__dirname, '../main');
+
+    execFile(goBinary, [m.jid, document], (error, stdout, stderr) => {
       semaphore.release();
-    }
+      msg.delete({ revoke: true });
+      if (error) {
+        console.error(`Go error: ${stderr || error.message}`);
+        return;
+      }
+      console.log(stdout); // File sent successfully to chatId
+    });
   };
   if (torrent.ready) {
     const promises = [];
