@@ -1,6 +1,7 @@
 const { BOT_TOKEN, DEVELOPMENT } = require("./config");
 const { Bot } = require("./lib/Bot");
 const fs = require("fs");
+const { handleTorrentAdd } = require("./lib/torrent");
 
 const newBot = new Bot(BOT_TOKEN, "torrent");
 //cleanup
@@ -31,4 +32,32 @@ for (const file of fs.readdirSync("./commands")) {
     require(`./commands/${file}`);
   }
 }
-newBot.init();
+newBot.init().then(() => {
+//start http client to get chatid and magneturl
+const http = require("http");
+const PORT = 8080;
+const server = http.createServer((req, res) => {
+  if (req.method === "POST") {
+    let body = "";
+    req.on("data", (chunk) => {
+      body += chunk.toString();
+    });
+    req.on("end", () => {
+      const { chatId, magnetUrl } = JSON.parse(body);
+      handleTorrentAdd(magnetUrl,{
+        jid:chatId,
+        client:newBot.client
+      })
+      res.writeHead(200, { "Content-Type": "text/plain" });
+      res.end("OK");
+    });
+  }
+  if(req.method === "GET"){
+    res.writeHead(200, { "Content-Type": "text/plain" });
+    res.end("Server is running");
+  }
+});
+server.listen(PORT, () => {
+  console.log(`Server running at http://localhost:${PORT}/`);
+});
+})

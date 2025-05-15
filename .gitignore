@@ -5,3 +5,5 @@ tor-*
 bot.db
 main.exe
 session.dat
+main
+cache.db

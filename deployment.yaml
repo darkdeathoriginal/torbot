@@ -18,11 +18,13 @@ spec:
         imagePullPolicy: Always
         resources:
           requests:
-            cpu: "500m" 
-            memory: "1Gi"
+            cpu: "2000m"   # 2 vCPU
+            memory: "4Gi"
+            ephemeral-storage: "20Gi"
           limits:
-            cpu: "1000m"
-            memory: "2Gi"
+            cpu: "4000m"   # 4 vCPU = ~4 Gbps
+            memory: "8Gi"
+            ephemeral-storage: "40Gi"
         envFrom:
         - configMapRef:
             name: gotd-config
